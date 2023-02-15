@@ -1,4 +1,5 @@
 # Kodi Screen Reader Installer Script
+(updated on 2023-02-15)
 
 A .bat file to build, install and enable screen reader support in Kodi.
 

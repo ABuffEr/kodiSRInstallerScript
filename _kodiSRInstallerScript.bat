@@ -24,21 +24,20 @@ if not defined kodiExe (
 echo Ok, Kodi found^!
 :: use a working dir
 echo Create working dir...
-set workingDir="%~dp0__workingDir__"
+set workingDir="%tmp%\__kodiSRInstallerScript__"
 mkdir %workingDir%>nul 2>nul
 :: get/set Curl
 curl.exe --version>nul 2>nul
 if %errorlevel% neq 0 (
 	call :getCurl
-	set curlExe=%workingDir%\curlDir\bin\curl.exe --silent
+	set curlExe=%workingDir%\curlDir\bin\curl.exe --silent --retry 3
 ) else (
-	set curlExe=curl.exe --silent
+	set curlExe=curl.exe --silent --retry 3
 )
 :: check :getCurl result
 if %errorlevel% neq 0 (
 	echo Sorry, something went wrong with Curl. Try later.
-	pause
-	goto :finish
+	goto :badFinish
 )
 :: download stuff
 echo Downloading service.xbmc.tts...
@@ -53,8 +52,7 @@ set url3="https://www.nvaccess.org/files/nvda/releases/stable/"
 set namePart=
 if not exist %workingDir%\nvda-files.htm (
 	echo Sorry, something went wrong with NVDA stuff. Try later.
-	pause
-	goto :finish
+	goto :badFinish
 )
 for /f "tokens=2 delims==>" %%a in ('findstr "controllerClient.zip" %workingDir%\nvda-files.htm') do (
 	set namePart=%%~a
@@ -80,17 +78,43 @@ mkdir %workingDir%\nvdaControllerClient>nul 2>nul
 call :psUnzip nvda_controllerClient.zip %workingDir%\nvdaControllerClient
 set dir3=%dir2%\backends\nvda
 mkdir %dir3%>nul 2>nul
-move %workingDir%\nvdaControllerClient\x86\nvdaControllerClient32.dll %dir3%\>nul 2>nul
+move /y %workingDir%\nvdaControllerClient\x86\nvdaControllerClient32.dll %dir3%\>nul 2>nul
+move /y %workingDir%\nvdaControllerClient\x64\nvdaControllerClient64.dll %dir3%\>nul 2>nul
+:: copy .json to avoid problems with path
+copy /y "%~dp0enableAddonCommand.json" %workingDir%\>nul 2>nul
+:: verify
+echo Verify:
+set stop=0
+if exist %dir1% (
+	echo Folder addons OK
+) else (set stop=1 && goto :stopVerify)
+if exist %dir1%\service.xbmc.tts\*.py (
+	echo Folder service.xbmc.tts OK
+) else (set stop=2 && goto :stopVerify)
+if exist %dir2%\backends\*.py (
+	echo Folder backends OK
+) else (set stop=3 && goto :stopVerify)
+if exist %dir3%\*.dll (
+	echo Folder nvda OK
+) else (set stop=4 && goto :stopVerify)
+if exist %workingDir%\enableAddonCommand.json (
+	echo File json OK
+) else (set stop=5)
+:stopVerify
+if %stop% neq 0 (
+	echo Sorry, something went wrong. Try later.
+	echo Error code: %stop%
+	goto :badFinish
+)
 :: copy in %appdata%
 xcopy /s /i /q /y %workingDir%\Kodi "%appdata%\Kodi">nul 2>nul
 if not exist "%appdata%\Kodi\addons\service.xbmc.tts" (
 	echo Sorry, something went wrong copying in appdata. Try later.
-	pause
-	goto :finish
+	goto :badFinish
 )
 :: start Kodi
 echo Launching Kodi...
-start "" /b %kodiExe%
+start "" %kodiExe%
 :: wait 5 seconds for Kodi is ready
 ping -n 5 localhost>nul 2>nul
 echo Enabling addon...
@@ -106,20 +130,25 @@ if %errorlevel% neq 0 (
 )
 echo Downloading Curl...
 set url0="https://curl.se/windows/latest.cgi?p=win32-mingw.zip"
-powershell -nologo -noprofile -command "(New-Object System.Net.WebClient).DownloadFile('%url0%', '%workingDir%\curl.zip')"
+powershell -noLogo -noProfile -command "(New-Object System.Net.WebClient).DownloadFile('%url0%', '%workingDir%\curl.zip')"
 echo Extracting Curl...
 call :psUnzip curl.zip %workingDir%
-move %workingDir%\curl-* %workingDir%\curlDir>nul 2>nul
+move /y %workingDir%\curl-* %workingDir%\curlDir>nul 2>nul
 exit /b %errorlevel%
 
 :psUnzip
 :: %1: filename.zip
 :: %2: where extract to
-powershell -nologo -noprofile -command "& { $shell = New-Object -COM Shell.Application; $target = $shell.NameSpace('%2'); $zip = $shell.NameSpace('%workingDir%\%1'); $target.CopyHere($zip.Items(), 16); }"
+powershell -noLogo -noProfile -command "&{ $shell = New-Object -COM Shell.Application; $target = $shell.NameSpace('%2'); $zip = $shell.NameSpace('%workingDir%\%1'); $target.CopyHere($zip.Items(), 16); }"
 goto :eof
 
 :enableAddon
-%curlExe% --include --request POST --header "Content-Type:application/json" --data @enableAddonCommand.json "http://localhost:9090/jsonrpc?request="
+%curlExe% --include --request POST --header "Content-Type:application/json" --data @%workingDir%\enableAddonCommand.json "http://localhost:9090/jsonrpc?request="
+goto :eof
+
+:badFinish
+rmdir /s /q %workingDir%>nul 2>nul
+pause
 goto :eof
 
 :finish
