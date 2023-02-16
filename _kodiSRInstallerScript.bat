@@ -1,27 +1,44 @@
 @echo off
-echo.
-echo.
 title Kodi Screen Reader Installer Script
-cls
+:: Author: Alberto Buffolino
+:: Version: 1.3 (2023/02/16)
+:: License: GPL V2
+echo.
 :: enable extensions for ensure if and mkdir behavior
 setlocal EnableExtensions
 :: get/set Kodi
+echo Checking Kodi presence...
+set portableSetup=0
+set p0="%~dp0kodi.exe"
+if exist %p0% (
+	if exist "%~dp0portable_data" (
+		set kodiExe=%p0% -p
+		set portableSetup=1
+		echo Found portable %p0%
+		goto :stopKodiSearch
+	)
+)
 set p1="%ProgramFiles%\Kodi\kodi.exe"
 if exist %p1% (
 	set kodiExe=%p1%
+	echo Found %p1%
+	goto :stopKodiSearch
 )
 set p2="%ProgramFiles(X86)%\Kodi\kodi.exe"
 if exist %p2% (
 	set kodiExe=%p2%
+	echo Found %p2%
+	goto :stopKodiSearch
 )
 if not defined kodiExe (
 	echo Kodi not found^!
-	echo Please install it, in default directory;
+	echo Please install it, or, if you use Kodi as portable,
+	echo put this .bat and .json file where portable_data is located,
 	echo then execute this script again.
 	pause
 	goto :eof
 )
-echo Ok, Kodi found^!
+:stopKodiSearch
 :: use a working dir
 echo Create working dir...
 set workingDir="%tmp%\__kodiSRInstallerScript__"
@@ -36,9 +53,19 @@ if %errorlevel% neq 0 (
 )
 :: check :getCurl result
 if %errorlevel% neq 0 (
-	echo Sorry, something went wrong with Curl. Try later.
+	echo Sorry, something went wrong getting Curl.
+	echo Check connection or firewall, and retry.
 	goto :badFinish
 )
+:: verify connection
+echo Checking connection...
+%curlExe% google.com>nul 2>nul
+if %errorlevel% neq 0 (
+	echo Sorry, unable to download^!
+	echo Check connection or firewall, and retry.
+	goto :badFinish
+)
+echo Connection ok^!
 :: download stuff
 echo Downloading service.xbmc.tts...
 set url1="https://codeload.github.com/pvagner/service.xbmc.TTS/zip/2to3"
@@ -61,7 +88,7 @@ for /f "tokens=2 delims==>" %%a in ('findstr "controllerClient.zip" %workingDir%
 :: extract stuff
 echo Building Kodi addon...
 :: set and create base dir
-set dir1=%workingDir%\Kodi\addons
+set dir1=%workingDir%\data\addons
 mkdir %dir1%>nul 2>nul
 :: extract and adjust service.xbmc.tts
 call :psUnzip service.xbmc.tts.zip %dir1%
@@ -80,25 +107,26 @@ set dir3=%dir2%\backends\nvda
 mkdir %dir3%>nul 2>nul
 move /y %workingDir%\nvdaControllerClient\x86\nvdaControllerClient32.dll %dir3%\>nul 2>nul
 move /y %workingDir%\nvdaControllerClient\x64\nvdaControllerClient64.dll %dir3%\>nul 2>nul
+move /y %workingDir%\nvdaControllerClient\license.txt %dir3%\>nul 2>nul
 :: copy .json to avoid problems with path
 copy /y "%~dp0enableAddonCommand.json" %workingDir%\>nul 2>nul
 :: verify
 echo Verify:
 set stop=0
 if exist %dir1% (
-	echo Folder addons OK
+	echo Folder addons ok.
 ) else (set stop=1 && goto :stopVerify)
 if exist %dir1%\service.xbmc.tts\*.py (
-	echo Folder service.xbmc.tts OK
+	echo Folder service.xbmc.tts ok.
 ) else (set stop=2 && goto :stopVerify)
 if exist %dir2%\backends\*.py (
-	echo Folder backends OK
+	echo Folder backends ok.
 ) else (set stop=3 && goto :stopVerify)
 if exist %dir3%\*.dll (
-	echo Folder nvda OK
+	echo Folder nvda ok.
 ) else (set stop=4 && goto :stopVerify)
 if exist %workingDir%\enableAddonCommand.json (
-	echo File json OK
+	echo File json ok.
 ) else (set stop=5)
 :stopVerify
 if %stop% neq 0 (
@@ -106,17 +134,22 @@ if %stop% neq 0 (
 	echo Error code: %stop%
 	goto :badFinish
 )
-:: copy in %appdata%
-xcopy /s /i /q /y %workingDir%\Kodi "%appdata%\Kodi">nul 2>nul
-if not exist "%appdata%\Kodi\addons\service.xbmc.tts" (
-	echo Sorry, something went wrong copying in appdata. Try later.
+:: copy in %appdata% or portable_data
+if %portableSetup% neq 0 (
+	set kodiData="%~dp0portable_data"
+) else (
+	set kodiData="%appdata%\Kodi"
+)
+xcopy /s /i /q /y %workingDir%\data %kodiData%>nul 2>nul
+if not exist %kodiData%\addons\service.xbmc.tts (
+	echo Sorry, something went wrong copying in %kodiData%. Try later.
 	goto :badFinish
 )
 :: start Kodi
 echo Launching Kodi...
 start "" %kodiExe%
-:: wait 5 seconds for Kodi is ready
-ping -n 5 localhost>nul 2>nul
+:: wait 10 seconds for Kodi is ready
+ping -n 10 localhost>nul 2>nul
 echo Enabling addon...
 call :enableAddon
 goto :finish
