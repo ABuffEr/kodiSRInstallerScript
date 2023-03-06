@@ -1,7 +1,7 @@
 @echo off
 title Kodi Screen Reader Installer Script
 :: Author: Alberto Buffolino
-:: Version: 1.3 (2023/02/16)
+:: Version: 1.4 (2023/03/06)
 :: License: GPL V2
 echo.
 :: enable extensions for ensure if and mkdir behavior
