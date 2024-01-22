@@ -1,7 +1,7 @@
 @echo off
 title Kodi Screen Reader Installer Script
 :: Author: Alberto Buffolino
-:: Version: 1.4 (2023/03/06)
+:: Version: 1.5 (2024/01/22)
 :: License: GPL V2
 echo.
 :: enable extensions for ensure if and mkdir behavior
@@ -71,8 +71,7 @@ echo Downloading service.xbmc.tts...
 set url1="https://codeload.github.com/pvagner/service.xbmc.TTS/zip/2to3"
 %curlExe% --output %workingDir%\service.xbmc.tts.zip %url1%
 echo Downloading backends...
-rem set url2="https://codeload.github.com/pvagner/backends/zip/2to3"
-set url2="https://codeload.github.com/ABuffEr/backends/zip/fixNVDALoading"
+set url2="https://codeload.github.com/pvagner/backends/zip/2to3"
 %curlExe% --output %workingDir%\backends.zip %url2%
 echo Downloading nvda_controllerClient...
 set url3="https://www.nvaccess.org/files/nvda/releases/stable/"
@@ -100,8 +99,7 @@ del /q %dir1%\service.xbmc.tts\.*>nul 2>nul
 set dir2=%dir1%\service.xbmc.tts\Lib
 rmdir /s /q %dir2%\backends>nul 2>nul
 call :psUnzip backends.zip %dir2%
-rem ren %dir2%\backends-2to3 backends>nul 2>nul
-ren %dir2%\backends-fixNVDALoading backends>nul 2>nul
+ren %dir2%\backends-2to3 backends>nul 2>nul
 :: extract and adjust nvdaControllerClient
 mkdir %workingDir%\nvdaControllerClient>nul 2>nul
 call :psUnzip nvda_controllerClient.zip %workingDir%\nvdaControllerClient

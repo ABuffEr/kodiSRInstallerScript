@@ -1,5 +1,5 @@
 # Kodi Screen Reader Installer Script
-(updated on 2023-03-06)
+(updated on 2024-01-22)
 
 A .bat file to build, install and enable screen reader support in Kodi for Windows.
 
@@ -22,10 +22,6 @@ If you use portable Kodi, according to [this wiki][3], then instructions are sli
 3. place .bat and .json files where portable_data folder and kodi.exe are located;
 4. simply press enter on .bat file;
 5. if everything works well, Kodi will start and, after few seconds, you'll hear voice speaking!
-
-## What is done
-
-(to be detailed)
 
 
 [1]: https://kodi.tv/download/windows
