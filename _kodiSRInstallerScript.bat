@@ -1,7 +1,7 @@
 @echo off
 title Kodi Screen Reader Installer Script
 :: Author: Alberto Buffolino
-:: Version: 1.5 (2024/01/22)
+:: Version: 1.6 (2024/06/19)
 :: License: GPL V2
 echo.
 :: enable extensions for ensure if and mkdir behavior
@@ -105,8 +105,8 @@ mkdir %workingDir%\nvdaControllerClient>nul 2>nul
 call :psUnzip nvda_controllerClient.zip %workingDir%\nvdaControllerClient
 set dir3=%dir2%\backends\nvda
 mkdir %dir3%>nul 2>nul
-move /y %workingDir%\nvdaControllerClient\x86\nvdaControllerClient32.dll %dir3%\>nul 2>nul
-move /y %workingDir%\nvdaControllerClient\x64\nvdaControllerClient64.dll %dir3%\>nul 2>nul
+move /y %workingDir%\nvdaControllerClient\x86\nvdaControllerClient.dll %dir3%\nvdaControllerClient32.dll>nul 2>nul
+move /y %workingDir%\nvdaControllerClient\x64\nvdaControllerClient.dll %dir3%\nvdaControllerClient64.dll>nul 2>nul
 move /y %workingDir%\nvdaControllerClient\license.txt %dir3%\>nul 2>nul
 :: copy .json to avoid problems with path
 copy /y "%~dp0enableAddonCommand.json" %workingDir%\>nul 2>nul
