@@ -1,7 +1,7 @@
 @echo off
 title Kodi Screen Reader Installer Script
 :: Author: Alberto Buffolino
-:: Version: 1.6 (2024/06/19)
+:: Version: 1.7 (2025/03/02)
 :: License: GPL V2
 echo.
 :: enable extensions for ensure if and mkdir behavior
@@ -74,14 +74,14 @@ echo Downloading backends...
 set url2="https://codeload.github.com/pvagner/backends/zip/2to3"
 %curlExe% --output %workingDir%\backends.zip %url2%
 echo Downloading nvda_controllerClient...
-set url3="https://www.nvaccess.org/files/nvda/releases/stable/"
+set url3="https://download.nvaccess.org/releases/stable/"
 %curlExe% --output %workingDir%\nvda-files.htm %url3%
 set namePart=
 if not exist %workingDir%\nvda-files.htm (
 	echo Sorry, something went wrong with NVDA stuff. Try later.
 	goto :badFinish
 )
-for /f "tokens=2 delims==>" %%a in ('findstr "controllerClient.zip" %workingDir%\nvda-files.htm') do (
+for /f "skip=1 tokens=1 delims= " %%a in ('findstr "controllerClient.zip" %workingDir%\nvda-files.htm') do (
 	set namePart=%%~a
 )
 %curlExe% --output %workingDir%\nvda_controllerClient.zip %url3%%namePart%
